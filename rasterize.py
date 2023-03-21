@@ -24,9 +24,9 @@ def same_side(a, b, c, d):
     return False
 
 def contains(triangle, point):
-    a = triangle[0][:-1]
-    b = triangle[1][:-1]
-    c = triangle[2][:-1]
+    a = triangle[0]
+    b = triangle[1]
+    c = triangle[2]
     if same_side(point, a, b, c) and same_side(point, b, a, c) and same_side(point, c, a, b):
         return True
     return False
@@ -37,6 +37,12 @@ def matrix_mult(matrix, vector):
         result.append(dot_product(row, vector))
     return result
 
+def project(point, screen_width, screen_height, fov=500):
+    x, y, z = point
+    factor = fov / (z + fov)
+    x = x * factor + screen_width // 2
+    y = y * factor + screen_height // 2
+    return (x, y)
 
 
 def rotate_in_place(triangle, angle, origin, rotation_matrix):
@@ -55,6 +61,7 @@ def rotated(triangle, rotation_matrix):
     result = []
     for point in triangle:
         result.append(matrix_mult(rotation_matrix, point))
+        print(result[-1])
     return result
 
 def rotate_x(triangle, angle):
@@ -76,12 +83,24 @@ def translated(triangle, x, y, z):
     return result
 
 
-
-tri3D_3_model = ((-50, -50, 0), (50, -50, 0), (50, 50, 0))
-tri3D_3_model2 = ((50, 50, 0), (-50, 50, 0), (-50, -50, 0))
-
 pygame.init()
 
+
+tris = [
+    [[-25, -25, -25], [-25, -25, 25], [-25, 25, -25]],
+    [[-25, -25, 25], [-25, 25, -25], [-25, 25, 25]],
+    [[-25, -25, -25], [-25, 25, -25], [25, -25, -25]],
+    [[-25, -25, -25], [25, -25, -25], [25, -25, 25]],
+    [[-25, -25, -25], [25, -25, 25], [-25, -25, 25]],
+    [[-25, -25, 25], [25, -25, 25], [25, 25, 25]],
+    [[-25, -25, 25], [25, 25, 25], [-25, 25, 25]],
+    [[-25, 25, -25], [-25, 25, 25], [25, 25, -25]],
+    [[-25, 25, -25], [25, 25, -25], [25, 25, 25]],
+    [[25, -25, -25], [25, -25, 25], [25, 25, -25]],
+    [[25, -25, 25], [25, 25, -25], [25, 25, 25]],
+    [[-25, -25, -25], [-25, 25, -25], [25, -25, -25]],
+    [[-25, -25, -25], [25, -25, -25], [25, 25, -25]],
+]
 
 size = (700, 500)
 screen = pygame.display.set_mode(size)
@@ -94,11 +113,17 @@ done = False
 
 clock = pygame.time.Clock()
 
-tri1 = [(100, 100), (200, 100), (150, 200)]
-tri2 = [(300, 100), (400, 100), (350, 200)]
-
-tri1_3d = [(100, 100, 0), (200, 100, 0), (150, 200, 0)]
-tri2_3d = [(300, 100, 0), (400, 100, 0), (350, 200, 0)]
+def general_rotation_matrix(angle_a, angle_b, angle_c):
+    rotation_matrix = [
+        (math.cos(angle_a) * math.cos(angle_b),
+         math.cos(angle_a) * math.sin(angle_b) * math.sin(angle_c) - math.sin(angle_a) * math.cos(angle_c),
+         math.cos(angle_a) * math.sin(angle_b) * math.cos(angle_c) + math.sin(angle_a) * math.sin(angle_c)),
+        (math.sin(angle_a) * math.cos(angle_b),
+            math.sin(angle_a) * math.sin(angle_b) * math.sin(angle_c) + math.cos(angle_a) * math.cos(angle_c),
+            math.sin(angle_a) * math.sin(angle_b) * math.cos(angle_c) - math.cos(angle_a) * math.sin(angle_c)),
+        (-math.sin(angle_b), math.cos(angle_b) * math.sin(angle_c), math.cos(angle_b) * math.cos(angle_c))
+    ]
+    return rotation_matrix
 
 def get_bounding_box(triangle):
     min_x = min(triangle[0][0], triangle[1][0], triangle[2][0])
@@ -111,6 +136,15 @@ count = 0
 
 current_time = pygame.time.get_ticks()
 
+def rotate_triangle(triangle, angle):
+    angle = math.radians(angle)
+    sin = math.sin(angle)
+    cos = math.cos(angle)
+    return [
+        [x * cos - y * sin, x * sin + y * cos, z]
+        for x, y, z in triangle
+    ]
+
 while not done:
     current_time = pygame.time.get_ticks()
     for event in pygame.event.get():
@@ -118,32 +152,41 @@ while not done:
             done = True
     count += 1
 
-    tri3D_3_model2
-
-    tri3D_3 = rotate_x(tri3D_3_model, current_time / 1000)
-    tri3D_3 = rotate_z(tri3D_3, current_time / 2000)
-    tri3D_3 = rotate_y(tri3D_3, current_time / 3000)
-    translated_tri = translated(tri3D_3, 20, 20, 0)
-    translated_tri = rotate_z(translated_tri, current_time / 2000)
-    translated_tri = translated(translated_tri, 250, 150, 0)
-
-    tri3D_32 = rotate_x(tri3D_3_model2, current_time / 1000)
-    tri3D_32 = rotate_z(tri3D_32, current_time / 2000)
-    tri3D_32 = rotate_y(tri3D_32, current_time / 3000)
-    translated_tri2 = translated(tri3D_32, 20, 20, 0)
-    translated_tri2 = rotate_z(translated_tri2, current_time / 2000)
-    translated_tri2 = translated(translated_tri2, 250, 150, 0)
-
     screen.fill((255, 255, 255))
+    
+    tri_count = 0
+    translated_tris = []
+    for tri in tris:
+        tri_count += 1
 
-    for x in range(math.floor(get_bounding_box(translated_tri)[0]), math.ceil(get_bounding_box(translated_tri)[2])):
-        for y in range(math.floor(get_bounding_box(translated_tri)[1]), math.ceil(get_bounding_box(translated_tri)[3])):
-            if contains(translated_tri, (x, y)):
-                screen.set_at((x, y), (0, 0, 0))
-    for x in range(int(get_bounding_box(translated_tri2)[0]), int(get_bounding_box(translated_tri2)[2])):
-        for y in range(int(get_bounding_box(translated_tri2)[1]), int(get_bounding_box(translated_tri2)[3])):
-            if contains(translated_tri2, (x, y)):
-                screen.set_at((x, y), (0, 150, 100))
+        # new_tri = rotate_triangle(tri, current_time / 3)
+        # new_tri = rotate_x(tri, current_time / 10000 + tri_count)
+        # new_tri = rotate_y(new_tri, current_time / 10000 * tri_count)
+        # new_tri = rotate_z(new_tri, current_time / 10000 * tri_count)
+        
+        new_tri = rotated(tri, general_rotation_matrix(current_time / 1000,
+                                                       current_time / 1000,
+                                                       current_time / 1000))
+        translated_tri = translated(new_tri, 250, 150, 0)
+        translated_tris.append(translated_tri)
+
+
+    # for i, translated_tri in enumerate(translated_tris):
+        
+    #     for x in range(math.floor(get_bounding_box(translated_tri)[0]), math.ceil(get_bounding_box(translated_tri)[2])):
+    #         for y in range(math.floor(get_bounding_box(translated_tri)[1]), math.ceil(get_bounding_box(translated_tri)[3])):
+    #             if contains(translated_tri, (x, y)):
+    #                 screen.set_at((x, y), (i * 20, 255 - i * 10, i * 15))
+
+    for i, translated_tri in enumerate(translated_tris):
+        projected_tri = [project(point, size[0], size[1]) for point in translated_tri]
+
+        for x in range(math.floor(get_bounding_box(projected_tri)[0]), math.ceil(get_bounding_box(projected_tri)[2])):
+            for y in range(math.floor(get_bounding_box(projected_tri)[1]), math.ceil(get_bounding_box(projected_tri)[3])):
+                if contains(projected_tri, (x, y)):
+                    screen.set_at((x, y), (i * 20, 255 - i * 10, i * 15))
+
+        
 
     pygame.display.flip()
 
