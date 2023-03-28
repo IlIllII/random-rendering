@@ -3,7 +3,15 @@ Playing with some pixels
 
 ## Some progress updates
 
-### v1
+### Antialiasing
+
+Coming soon.
+
+### Spinning cube
+
+https://user-images.githubusercontent.com/78166995/227224673-23909285-284d-46eb-8c46-716549bec058.mp4
+
+### Rasterization of triangles in 3d space
 
 Triangles are on screen.
 
