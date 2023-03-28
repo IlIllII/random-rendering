@@ -61,7 +61,14 @@ done = False
 
 clock = pygame.time.Clock()
 
+def find_center(triangle):
+    x = (triangle[0][0] + triangle[1][0] + triangle[2][0]) / 3
+    y = (triangle[0][1] + triangle[1][1] + triangle[2][1]) / 3
+    z = (triangle[0][2] + triangle[1][2] + triangle[2][2]) / 3
+    return (x, y, z)
 
+def sort_tris_on_z(tris):
+    return sorted(tris, key=lambda tri: find_center(tri)[2], reverse=True)
 
 def get_bounding_box(triangle):
     min_x = min(triangle[0][0], triangle[1][0], triangle[2][0])
@@ -86,6 +93,29 @@ def rotate_triangle(triangle, rotation_matrix):
         vertex[0], vertex[1], vertex[2] = multiply_matrix_vector(rotation_matrix, vertex)
     return triangle
 
+
+def get_barycentric_coords(triangle, x, y):
+    (x1, y1, z1), (x2, y2, z2), (x3, y3, z3) = triangle
+    denominator = ((y2 - y3) * (x1 - x3) + (x3 - x2) * (y1 - y3))
+    if denominator == 0:
+        return False
+    a = ((y2 - y3) * (x - x3) + (x3 - x2) * (y - y3)) / denominator
+    b = ((y3 - y1) * (x - x3) + (x1 - x3) * (y - y3)) / denominator
+    c = 1 - a - b
+
+    return a, b, c
+
+def find_z_at_point(triangle, x, y):
+    (x1, y1, z1), (x2, y2, z2), (x3, y3, z3) = triangle
+    denominator = ((y2 - y3) * (x1 - x3) + (x3 - x2) * (y1 - y3))
+    if denominator == 0:
+        return -math.inf
+    a = ((y2 - y3) * (x - x3) + (x3 - x2) * (y - y3)) / denominator
+    b = ((y3 - y1) * (x - x3) + (x1 - x3) * (y - y3)) / denominator
+    c = 1 - a - b
+
+    return a * z1 + b * z2 + c * z3
+
 while not done:
     current_time = pygame.time.get_ticks()
     for event in pygame.event.get():
@@ -107,7 +137,9 @@ while not done:
         
         translated_tri = translated(new_tri, 250, 150, 0)
         translated_tris.append(translated_tri)
-        tri2D = [(translated_tri[0][0], translated_tri[0][1]), (translated_tri[1][0], translated_tri[1][1]), (translated_tri[2][0], translated_tri[2][1])]
+    
+
+    z_buffer = [[-float('inf') for x in range(size[0])] for y in range(size[1])]
 
 
     for i, translated_tri in enumerate(translated_tris):
@@ -115,7 +147,10 @@ while not done:
             for y in range(math.floor(get_bounding_box(translated_tri)[1]), math.ceil(get_bounding_box(translated_tri)[3])):
                 tri2D = [(translated_tri[0][0], translated_tri[0][1]), (translated_tri[1][0], translated_tri[1][1]), (translated_tri[2][0], translated_tri[2][1])]
                 if point_in_triangle((x, y), tri2D):
-                    screen.set_at((x, y), (i * 20, 255 - i * 10, i * 15))
+                    z = find_z_at_point(translated_tri, x, y)
+                    if z > z_buffer[y][x]:
+                        z_buffer[y][x] = z
+                        screen.set_at((x, y), (i * 20, 255 - i * 10, i * 15))
 
         
 
