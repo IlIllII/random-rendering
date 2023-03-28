@@ -49,8 +49,9 @@ tris = [
 ]
 
 
-
-size = (700, 500)
+WIDTH = 700
+HEIGHT = 500
+size = (WIDTH, HEIGHT)
 screen = pygame.display.set_mode(size)
 
 pygame.display.set_caption("My Game")
@@ -135,7 +136,7 @@ while not done:
         new_tri = rotate_triangle(new_tri, rotation_matrix((0, 0, 1), current_time / 1000))
     
         
-        translated_tri = translated(new_tri, 250, 150, 0)
+        translated_tri = translated(new_tri, WIDTH // 2, HEIGHT // 2, 0)
         translated_tris.append(translated_tri)
     
 
