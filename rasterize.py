@@ -54,7 +54,7 @@ HEIGHT = 500
 size = (WIDTH, HEIGHT)
 screen = pygame.display.set_mode(size)
 
-pygame.display.set_caption("My Game")
+pygame.display.set_caption("Cube")
 
 
 done = False

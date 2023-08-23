@@ -96,7 +96,7 @@ def render(vertices, angle_x, angle_y, angle_z):
         rotated = multiply_matrix_vector(rotation_matrix((0, 0, 1), angle_z), rotated)
         rotated_vertices.append(rotated)
 
-    scaling_factor = 50
+    scaling_factor = 25
     projected_vertices = [(WIDTH // 2 + int(v[0] * scaling_factor), HEIGHT // 2 + int(v[1] * scaling_factor)) for v in rotated_vertices]
 
     for j, face in enumerate(faces):
